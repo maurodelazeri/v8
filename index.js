@@ -2,35 +2,6 @@ const v8 = require("v8");
 const vm = require("vm");
 const fetchMetrics = require("./fetchMetrics");
 
-function interpolateString(str, variables) {
-  return str.replace(/\{\{(.+?)\}\}/g, (match, p1) => {
-    const key = p1.trim();
-    return variables[key] !== undefined ? variables[key] : match;
-  });
-}
-
-function interpolateObject(obj, variables) {
-  if (typeof obj !== "object" || obj === null) {
-    return obj;
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) => interpolateObject(item, variables));
-  }
-
-  const result = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === "string") {
-      result[key] = interpolateString(value, variables);
-    } else if (typeof value === "object") {
-      result[key] = interpolateObject(value, variables);
-    } else {
-      result[key] = value;
-    }
-  }
-  return result;
-}
-
 function createContext(initialVariables = {}) {
   const context = {
     console: console,
@@ -49,6 +20,7 @@ function createContext(initialVariables = {}) {
         );
       }
       context[name] = value;
+      global[name] = value; // Add variable to the global context
       console.log(`Variable added: ${name} = ${value}`);
       return "OK";
     },
@@ -58,14 +30,22 @@ function createContext(initialVariables = {}) {
       }
       if (name in context) {
         delete context[name];
+        delete global[name]; // Remove variable from the global context
         console.log(`Variable deleted: ${name}`);
         return "OK";
       } else {
         throw new Error(`Variable '${name}' not found`);
       }
     },
-    ...initialVariables,
   };
+
+  // Add initial variables to both the context and global object
+  console.log("Initial Variables:", initialVariables);
+  Object.keys(initialVariables).forEach((key) => {
+    context[key] = initialVariables[key];
+    global[key] = initialVariables[key]; // Ensure the variable is globally accessible
+    console.log("Setting variable:", key, initialVariables[key]);
+  });
 
   return vm.createContext(context);
 }
@@ -130,19 +110,40 @@ async function main() {
 
   // Initialize variables from the response
   const initialVariables = {};
-  if (response.data.execution_result.pulse.variables) {
+  if (
+    response.data.execution_result.pulse &&
+    Array.isArray(response.data.execution_result.pulse.variables)
+  ) {
     response.data.execution_result.pulse.variables.forEach((variable) => {
-      try {
+      // Check if the variable is an object with name and value properties
+      if (
+        variable &&
+        typeof variable === "object" &&
+        "name" in variable &&
+        "value" in variable
+      ) {
         initialVariables[variable.name] = variable.value;
-      } catch (error) {
-        console.error(
-          `Error initializing variable ${variable.name}:`,
-          error.message
-        );
+      } else {
+        // If it's not in the expected format, try to parse it as a key-value pair
+        const key = Object.keys(variable)[0];
+        const value = variable[key];
+        if (key && value !== undefined) {
+          initialVariables[key] = value;
+        } else {
+          console.error(`Invalid variable format: ${JSON.stringify(variable)}`);
+        }
       }
     });
+  } else {
+    console.error(
+      "No variables found or variables format is incorrect in the response payload."
+    );
   }
 
+  // Verify the initial variables are correctly populated
+  console.log("Final Initial Variables:", initialVariables);
+
+  // Create context and ensure variables are accessible globally
   const context = createContext(initialVariables);
 
   const results = [];
@@ -154,19 +155,7 @@ async function main() {
 
     console.log(`Running test: ${testConfig.name}`);
 
-    // Interpolate variables in the testConfig
-    const interpolatedTestConfig = interpolateObject(
-      testConfig,
-      initialVariables
-    );
-
-    console.log(
-      "Interpolated Test Config:",
-      JSON.stringify(interpolatedTestConfig, null, 2)
-    );
-    console.log("Test metrics:", JSON.stringify(testMetrics, null, 2));
-
-    const assertion = interpolatedTestConfig.evaluation_function;
+    const assertion = testConfig.evaluation_function;
     const result = runAssertionFunction(context, testMetrics, assertion);
 
     results.push({
