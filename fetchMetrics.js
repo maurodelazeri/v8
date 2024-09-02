@@ -53,7 +53,7 @@ async function fetchMetrics() {
           do_not_save_response_body: false,
         },
         evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKCiAgICBwZkFkZFZhcmlhYmxlKCJtYXVybyIsIndoYXRldmVyIik7CgogICAgcmV0dXJuIHsKICAgICAgICBzdWNjZXNzOiB0cnVlLAogICAgICAgIG1hdXJvOiBwYXJhbXMKICAgIH07Cn0=",
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKCiAgICBwZkFkZFZhcmlhYmxlKCJtYXVybyIsIndoYXRldmVyIik7CgogICAgcmV0dXJuIHsKICAgICAgICBzdWNjZXNzOiB0cnVlLAogICAgICAgIG1ldGhvZDogbWV0aG9kLAogICAgICAgIG1hdXJvOiBwYXJhbXMKICAgIH07Cn0=",
       },
     ],
     alert_config: {

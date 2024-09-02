@@ -2,16 +2,72 @@ const v8 = require("v8");
 const vm = require("vm");
 const fetchMetrics = require("./fetchMetrics");
 
-function createContext() {
-  const context = vm.createContext({
-    console: console,
-    pfAddVariable: (name, value) => {
-      console.log(`Variable added: ${name} = ${value}`);
-      // You might want to actually store this somewhere
-    },
+function interpolateString(str, variables) {
+  return str.replace(/\{\{(.+?)\}\}/g, (match, p1) => {
+    const key = p1.trim();
+    return variables[key] !== undefined ? variables[key] : match;
   });
+}
 
-  return context;
+function interpolateObject(obj, variables) {
+  if (typeof obj !== "object" || obj === null) {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => interpolateObject(item, variables));
+  }
+
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === "string") {
+      result[key] = interpolateString(value, variables);
+    } else if (typeof value === "object") {
+      result[key] = interpolateObject(value, variables);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
+function createContext(initialVariables = {}) {
+  const context = {
+    console: console,
+    pfAddVariable: function (name, value) {
+      if (typeof name !== "string" || typeof value !== "string") {
+        throw new Error("Name and value must be strings");
+      }
+      if (
+        name.includes("{") ||
+        name.includes("}") ||
+        value.includes("{") ||
+        value.includes("}")
+      ) {
+        throw new Error(
+          "Invalid characters: '{' and '}' are not allowed in name or value"
+        );
+      }
+      context[name] = value;
+      console.log(`Variable added: ${name} = ${value}`);
+      return "OK";
+    },
+    pfDeleteVariable: function (name) {
+      if (typeof name !== "string") {
+        throw new Error("Name must be a string");
+      }
+      if (name in context) {
+        delete context[name];
+        console.log(`Variable deleted: ${name}`);
+        return "OK";
+      } else {
+        throw new Error(`Variable '${name}' not found`);
+      }
+    },
+    ...initialVariables,
+  };
+
+  return vm.createContext(context);
 }
 
 function runInContext(context, code) {
@@ -56,8 +112,6 @@ function runAssertionFunction(context, metrics, assertion) {
 }
 
 async function main() {
-  const context = createContext();
-
   // Fetch metrics
   const response = await fetchMetrics();
 
@@ -74,6 +128,23 @@ async function main() {
     return;
   }
 
+  // Initialize variables from the response
+  const initialVariables = {};
+  if (response.data.execution_result.pulse.variables) {
+    response.data.execution_result.pulse.variables.forEach((variable) => {
+      try {
+        initialVariables[variable.name] = variable.value;
+      } catch (error) {
+        console.error(
+          `Error initializing variable ${variable.name}:`,
+          error.message
+        );
+      }
+    });
+  }
+
+  const context = createContext(initialVariables);
+
   const results = [];
   let allTestsPassed = true;
 
@@ -82,9 +153,20 @@ async function main() {
     const testMetrics = metrics[i];
 
     console.log(`Running test: ${testConfig.name}`);
+
+    // Interpolate variables in the testConfig
+    const interpolatedTestConfig = interpolateObject(
+      testConfig,
+      initialVariables
+    );
+
+    console.log(
+      "Interpolated Test Config:",
+      JSON.stringify(interpolatedTestConfig, null, 2)
+    );
     console.log("Test metrics:", JSON.stringify(testMetrics, null, 2));
 
-    const assertion = testConfig.evaluation_function;
+    const assertion = interpolatedTestConfig.evaluation_function;
     const result = runAssertionFunction(context, testMetrics, assertion);
 
     results.push({
@@ -111,6 +193,7 @@ async function main() {
 
   console.log("All test results:", results);
   console.log("All tests passed:", allTestsPassed);
+  console.log("Final variables state:", context);
 }
 
 main().catch(console.error);
