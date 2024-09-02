@@ -88,7 +88,7 @@ function runAssertionFunction(context, metrics, assertion) {
         var result = main({ metrics: metrics });
         return JSON.stringify(result);
       } catch (e) {
-        return JSON.stringify({ error: e.message, stack: e.stack });
+        return JSON.stringify({ error: e.message });
       }
     })(${JSON.stringify(metrics)})
   `;
@@ -99,12 +99,7 @@ function runAssertionFunction(context, metrics, assertion) {
     const parsedResult = JSON.parse(result);
     if (parsedResult.error) {
       console.error("Assertion error:", parsedResult.error);
-      console.error("Stack trace:", parsedResult.stack);
-      return {
-        success: false,
-        error: parsedResult.error,
-        stack: parsedResult.stack,
-      };
+      return { success: false, error: parsedResult.error };
     }
     if (typeof parsedResult.success !== "boolean") {
       console.error("Assertion result must contain a 'success' boolean field");
@@ -198,7 +193,7 @@ async function main() {
 
   console.log("All test results:", results);
   console.log("All tests passed:", allTestsPassed);
-  console.log("Final context state:", context);
+  console.log("Final variables state:", context);
 }
 
 main().catch(console.error);
