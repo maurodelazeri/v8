@@ -6,21 +6,10 @@ function createContext(initialVariables = {}) {
   const context = {
     console: console,
     pfAddVariable: function (name, value) {
-      if (typeof name !== "string" || typeof value !== "string") {
-        throw new Error("Name and value must be strings");
-      }
-      if (
-        name.includes("{") ||
-        name.includes("}") ||
-        value.includes("{") ||
-        value.includes("}")
-      ) {
-        throw new Error(
-          "Invalid characters: '{' and '}' are not allowed in name or value"
-        );
+      if (typeof name !== "string") {
+        throw new Error("Name must be a string");
       }
       context[name] = value;
-      global[name] = value; // Add variable to the global context
       console.log(`Variable added: ${name} = ${value}`);
       return "OK";
     },
@@ -30,7 +19,6 @@ function createContext(initialVariables = {}) {
       }
       if (name in context) {
         delete context[name];
-        delete global[name]; // Remove variable from the global context
         console.log(`Variable deleted: ${name}`);
         return "OK";
       } else {
@@ -39,46 +27,50 @@ function createContext(initialVariables = {}) {
     },
   };
 
-  // Add initial variables to both the context and global object
+  // Add initial variables to the context
   console.log("Initial Variables:", initialVariables);
   Object.keys(initialVariables).forEach((key) => {
     context[key] = initialVariables[key];
-    global[key] = initialVariables[key]; // Ensure the variable is globally accessible
     console.log("Setting variable:", key, initialVariables[key]);
   });
 
-  return vm.createContext(context);
+  return context;
 }
 
 function runInContext(context, code) {
+  const sandbox = vm.createContext(context);
   try {
     const script = new vm.Script(code);
-    return script.runInContext(context);
+    return script.runInContext(sandbox);
   } catch (error) {
     console.error("Error running script:", error);
-    return null;
+    throw error; // Re-throw the error for better error handling
   }
 }
 
 function runAssertionFunction(context, metrics, assertion) {
+  // Add metrics to the context
+  context.metrics = metrics;
+
   const wrappedAssertion = `
-    (function(metrics) {
+    (function() {
       ${atob(assertion)}
       try {
         var result = main({ metrics: metrics });
         return JSON.stringify(result);
       } catch (e) {
-        return JSON.stringify({ error: e.message });
+        return JSON.stringify({ error: e.message, stack: e.stack });
       }
-    })(${JSON.stringify(metrics)})
+    })()
   `;
 
-  const result = runInContext(context, wrappedAssertion);
-
-  if (result) {
+  try {
+    const result = runInContext(context, wrappedAssertion);
     const parsedResult = JSON.parse(result);
+
     if (parsedResult.error) {
       console.error("Assertion error:", parsedResult.error);
+      console.error("Stack trace:", parsedResult.stack);
       return { success: false, error: parsedResult.error };
     }
     if (typeof parsedResult.success !== "boolean") {
@@ -86,9 +78,10 @@ function runAssertionFunction(context, metrics, assertion) {
       return { success: false, error: "Invalid assertion result format" };
     }
     return parsedResult;
+  } catch (error) {
+    console.error("Error running assertion:", error);
+    return { success: false, error: error.message };
   }
-
-  return { success: false, error: "Failed to run assertion" };
 }
 
 async function main() {
@@ -103,11 +96,6 @@ async function main() {
   const testConfigs = response.data.execution_result.pulse.test_config;
   const metrics = response.data.test_metrics;
 
-  if (testConfigs.length !== metrics.length) {
-    console.error("Mismatch between test configurations and metrics");
-    return;
-  }
-
   // Initialize variables from the response
   const initialVariables = {};
   if (
@@ -115,7 +103,6 @@ async function main() {
     Array.isArray(response.data.execution_result.pulse.variables)
   ) {
     response.data.execution_result.pulse.variables.forEach((variable) => {
-      // Check if the variable is an object with name and value properties
       if (
         variable &&
         typeof variable === "object" &&
@@ -124,7 +111,6 @@ async function main() {
       ) {
         initialVariables[variable.name] = variable.value;
       } else {
-        // If it's not in the expected format, try to parse it as a key-value pair
         const key = Object.keys(variable)[0];
         const value = variable[key];
         if (key && value !== undefined) {
@@ -140,23 +126,21 @@ async function main() {
     );
   }
 
-  // Verify the initial variables are correctly populated
   console.log("Final Initial Variables:", initialVariables);
 
-  // Create context and ensure variables are accessible globally
-  const context = createContext(initialVariables);
+  // Create a single context to be used across all test evaluations
+  const sharedContext = createContext(initialVariables);
 
   const results = [];
   let allTestsPassed = true;
 
   for (let i = 0; i < testConfigs.length; i++) {
     const testConfig = testConfigs[i];
-    const testMetrics = metrics[i];
 
     console.log(`Running test: ${testConfig.name}`);
 
     const assertion = testConfig.evaluation_function;
-    const result = runAssertionFunction(context, testMetrics, assertion);
+    const result = runAssertionFunction(sharedContext, metrics, assertion);
 
     results.push({
       testName: testConfig.name,
@@ -182,7 +166,7 @@ async function main() {
 
   console.log("All test results:", results);
   console.log("All tests passed:", allTestsPassed);
-  console.log("Final variables state:", context);
+  console.log("Final variables state:", sharedContext);
 }
 
 main().catch(console.error);

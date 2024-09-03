@@ -1,7 +1,8 @@
 const axios = require("axios");
 
 async function fetchMetrics() {
-  const url = "http://127.0.0.1:7777/api/v1/pulse/trigger_manual_pulse";
+  const url =
+    "https://api-orion-dev.perfroute.com/api/v1/pulse/trigger_manual_pulse";
   const headers = {
     "Content-Type": "application/json",
     Authorization:
@@ -12,7 +13,7 @@ async function fetchMetrics() {
     name: "pulse without web test",
     pulse_status: "active",
     run_type: "manual",
-    locations: ["do_use1_workers"],
+    locations: ["oc_weu1_workers"],
     tags: ["mainnet", "tag1", "{{ method }}"],
     variables: [
       { name: "method", value: "GET" },
@@ -53,7 +54,43 @@ async function fetchMetrics() {
           do_not_save_response_body: false,
         },
         evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKCiAgICBwZkFkZFZhcmlhYmxlKCJtYXVybyIsIndoYXRldmVyIik7CgogICAgcmV0dXJuIHsKICAgICAgICBzdWNjZXNzOiB0cnVlLAogICAgICAgIG1ldGhvZDogbWV0aG9kLAogICAgICAgIG1hdXJvOiBwYXJhbXMKICAgIH07Cn0=",
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKCiAgICBwZkFkZFZhcmlhYmxlKCJtYXVybyIsIndoYXRldmVyIik7CiB2YXIgdmFyaWFibGUxID0gImRlbGF6ZXJpIjsKICAgIHJldHVybiB7CiAgICAgICAgc3VjY2VzczogdHJ1ZSwKICAgICAgICBtZXRob2Q6IG1ldGhvZCwKICAgICAgICBqYW1lczogbWF1cm8sCiAgICAgICAgbWF1cm86IHBhcmFtcwogICAgfTsKfQ==",
+      },
+      {
+        name: "test2",
+        pulse_type: "http",
+        continue_on_step_failure: true,
+        ssl_prove: true,
+        dns_prove: true,
+        mtr_prove: false,
+        tags: ["tag1", "tag2"],
+        url: "{{base_url}}",
+        http_request_options: {
+          method: "{{ method }}",
+          http_version: "HTTP2FallbackToHTTP1",
+          follow_redirects: true,
+          timeout_seconds: 15,
+          headers: [
+            { name: "Content-Type", value: "application/json" },
+            { name: "Accept", value: "application/json" },
+          ],
+          cookies: [{ name: "session_id", value: "12345" }],
+        },
+        query_parameters: {
+          parameters: [
+            { name: "param1", value: "value1" },
+            { name: "param2", value: "value2" },
+          ],
+        },
+        request_body: {
+          body_type: "application/json",
+          body: '{"method":"getmininginfo","params":[],"id":9056,"jsonrpc":"2.0"}',
+        },
+        privacy: {
+          do_not_save_response_body: false,
+        },
+        evaluation_function:
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICAgIHJldHVybiB7CiAgICAgICAgc3VjY2VzczogdHJ1ZSwKICAgICAgICBqYW1lczogbWF1cm8sCiAgICB9Owp9",
       },
     ],
     alert_config: {
