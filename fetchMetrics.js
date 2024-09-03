@@ -54,7 +54,7 @@ async function fetchMetrics() {
           do_not_save_response_body: false,
         },
         evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICBwZkFkZFZhcmlhYmxlKCJtYXVybyIsICJ3aGF0ZXZlciIpOwogIHRoaXMudmFyaWFibGUxID0gImRlbGF6ZXJpIjsgLy8gQXR0YWNoIHZhcmlhYmxlIHRvIHRoZSBzaGFyZWQgY29udGV4dAogIHJldHVybiB7CiAgICBzdWNjZXNzOiB0cnVlLAogICAgbWV0aG9kOiB0aGlzLm1ldGhvZCwgLy8gQXNzdW1pbmcgbWV0aG9kIGlzIHBhcnQgb2YgdGhlIHNoYXJlZCBjb250ZXh0CiAgICBqYW1lczogdGhpcy5tYXVybywKICAgIG1hdXJvOiBwYXJhbXMsCiAgfTsKfQo=",
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICBwZkFkZFZhcmlhYmxlKCJtYXVybyIsICJ3aGF0ZXZlciIpOwogIHRoaXMudmFyaWFibGUxID0gImRlbGF6ZXJpIjsgCiAgcmV0dXJuIHsKICAgIHN1Y2Nlc3M6IHRydWUsCiAgICBtZXRob2Q6IHRoaXMubWV0aG9kLCAKICAgIGphbWVzOiB0aGlzLm1hdXJvLAogICAgbWF1cm86IHBhcmFtcywKICB9Owp9Cg==",
       },
       {
         name: "test2",
@@ -90,7 +90,7 @@ async function fetchMetrics() {
           do_not_save_response_body: false,
         },
         evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICByZXR1cm4gewogICAgc3VjY2VzczogdHJ1ZSwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogIm9rIiwKICB9Owp9Cg==",
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICByZXR1cm4gewogICAgc3VjY2VzczogdHJ1ZSwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogdGhpcy52YXJpYWJsZTEsCiAgfTsKfQo=",
       },
     ],
     alert_config: {
