@@ -3,13 +3,13 @@ const vm = require("vm");
 const fetchMetrics = require("./fetchMetrics");
 
 function createContext(initialVariables = {}) {
-  const context = {
+  const sharedContext = {
     console: console,
     pfAddVariable: function (name, value) {
       if (typeof name !== "string") {
         throw new Error("Name must be a string");
       }
-      context[name] = value;
+      this[name] = value; // Attach variables directly to sharedContext
       console.log(`Variable added: ${name} = ${value}`);
       return "OK";
     },
@@ -17,34 +17,30 @@ function createContext(initialVariables = {}) {
       if (typeof name !== "string") {
         throw new Error("Name must be a string");
       }
-      if (name in context) {
-        delete context[name];
+      if (name in this) {
+        delete this[name];
         console.log(`Variable deleted: ${name}`);
         return "OK";
       } else {
         throw new Error(`Variable '${name}' not found`);
       }
     },
+    // Add any other initial variables
+    ...initialVariables,
   };
 
-  // Add initial variables to the context
-  console.log("Initial Variables:", initialVariables);
-  Object.keys(initialVariables).forEach((key) => {
-    context[key] = initialVariables[key];
-    console.log("Setting variable:", key, initialVariables[key]);
-  });
-
-  return context;
+  return sharedContext;
 }
 
-function runInContext(context, code) {
-  const sandbox = vm.createContext(context);
+function runInContext(sharedContext, code) {
+  const sandbox = { ...sharedContext }; // Create a sandbox with sharedContext
+  const context = vm.createContext(sandbox);
   try {
     const script = new vm.Script(code);
-    return script.runInContext(sandbox);
+    return script.runInContext(context);
   } catch (error) {
     console.error("Error running script:", error);
-    throw error; // Re-throw the error for better error handling
+    throw error;
   }
 }
 
