@@ -54,7 +54,7 @@ async function fetchMetrics() {
           do_not_save_response_body: false,
         },
         evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICBwZkFkZFZhcmlhYmxlKCJtYXVybyIsICJ3aGF0ZXZlciIpOwogIHRoaXMudmFyaWFibGUxID0gImRlbGF6ZXJpIjsgCiAgcmV0dXJuIHsKICAgIHN1Y2Nlc3M6IHRydWUsCiAgICBtZXRob2Q6IHRoaXMubWV0aG9kLCAKICAgIGphbWVzOiB0aGlzLm1hdXJvLAogICAgbWF1cm86IHBhcmFtcywKICB9Owp9Cg==",
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICAgIGNvbnN0IHsgc3NsX21ldHJpY3MsIHN0YXR1c19jb2RlLCBkbnNfbG9va3VwX3RpbWUgfSA9IHBhcmFtcz8ubWV0cmljcyB8fCB7fTsKICAgIGNvbnN0IGlzU3NsVmFsaWQgPSBzc2xfbWV0cmljcz8uZGF5c191bnRpbF9leHBpcnkgPCAxMDsKICAgIGNvbnN0IGlzU3RhdHVzT2sgPSBzdGF0dXNfY29kZSA9PT0gMjAwOwogICAgY29uc3QgaXNEbnNGYXN0ID0gZG5zX2xvb2t1cF90aW1lIDwgMTsKCiAgICBjb25zdCBzdWNjZXNzID0gaXNTc2xWYWxpZCAmJiBpc1N0YXR1c09rICYmIGlzRG5zRmFzdDsKCiAgICByZXR1cm4gewogICAgICAgIHN1Y2Nlc3M6IHN1Y2Nlc3MsCiAgICAgICAgbWV0cmljczogcGFyYW1zLm1ldHJpY3MKICAgIH07Cn0=",
       },
       {
         name: "test2",
