@@ -162,7 +162,7 @@ async function main() {
 
   console.log("All test results:", results);
   console.log("All tests passed:", allTestsPassed);
-  console.log("Final variables state:", sharedContext);
+  // console.log("Final variables state:", sharedContext);
 }
 
 main().catch(console.error);
