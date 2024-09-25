@@ -29,14 +29,16 @@ function createContext(initialVariables = {}) {
       }
     },
     ...initialVariables,
+    __variableStates: {},
+    __failureReasons: [],
+    Buffer: Buffer,
   };
 
-  return sharedContext;
+  const context = vm.createContext(sharedContext);
+  return context;
 }
 
-function runInContext(sharedContext, code) {
-  const sandbox = { ...sharedContext, Buffer: Buffer };
-  const context = vm.createContext(sandbox);
+function runInContext(context, code) {
   try {
     const script = new vm.Script(code);
     return script.runInContext(context);
@@ -103,9 +105,10 @@ function injectVariableTracking(code) {
     },
   });
 
-  // Initialize variableStates and failureReasons
-  modifiedLines.push("var __variableStates = {};");
-  modifiedLines.push("var __failureReasons = [];");
+  // Remove initialization of __variableStates and __failureReasons
+  // They are now initialized in the shared context
+  // modifiedLines.push("var __variableStates = {};");
+  // modifiedLines.push("var __failureReasons = [];");
 
   // Inject variable tracking code after relevant lines
   for (let i = 0; i < lines.length; i++) {
@@ -306,6 +309,10 @@ async function main() {
 
   console.log("All test results:", JSON.stringify(results, null, 2));
   console.log("All tests passed:", allTestsPassed);
+
+  // If you want to see the accumulated variableStates and failureReasons
+  console.log("Accumulated variableStates:", sharedContext.__variableStates);
+  console.log("Accumulated failureReasons:", sharedContext.__failureReasons);
 }
 
 main().catch(console.error);
