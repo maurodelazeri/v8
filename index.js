@@ -66,14 +66,14 @@ function injectVariableTracking(code) {
         node.id.properties.forEach((prop) => {
           const varName = prop.key.name;
           variableNames.add(varName);
-          const lineNumber = node.loc.end.line - lineOffset - 1; // Adjust line number
+          const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
           if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
           linesToInject[lineNumber].push(varName);
         });
       } else if (node.id.type === "Identifier") {
         const varName = node.id.name;
         variableNames.add(varName);
-        const lineNumber = node.loc.end.line - lineOffset - 1; // Adjust line number
+        const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(varName);
       }
@@ -82,7 +82,7 @@ function injectVariableTracking(code) {
       if (node.left.type === "Identifier") {
         const varName = node.left.name;
         variableNames.add(varName);
-        const lineNumber = node.loc.end.line - lineOffset - 1; // Adjust line number
+        const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(varName);
       }
@@ -96,7 +96,7 @@ function injectVariableTracking(code) {
       ) {
         const varName = node.arguments[0].value;
         variableNames.add(varName);
-        const lineNumber = node.loc.end.line - lineOffset - 1; // Adjust line number
+        const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(varName);
       }
@@ -155,6 +155,7 @@ function injectVariableTracking(code) {
 }
 
 function runAssertionFunction(context, metrics, assertion) {
+  // Ensure metrics are accessible correctly
   context.metrics = metrics;
   context.params = { metrics: metrics };
 
@@ -288,7 +289,6 @@ async function main() {
       });
     }
 
-    console.log("result", result);
     if (!result.success) {
       allTestsPassed = false;
       if (!testConfig.continue_on_step_failure) {
