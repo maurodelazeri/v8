@@ -54,44 +54,44 @@ async function fetchMetrics() {
           do_not_save_response_body: false,
         },
         evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsNCiAgICBjb25zdCB7IHNzbF9tZXRyaWNzLCBzdGF0dXNfY29kZSwgZG5zX2xvb2t1cF90aW1lIH0gPSBwYXJhbXM/Lm1ldHJpY3MgfHwge307DQogICAgY29uc3QgaXNTc2xWYWxpZCA9IHNzbF9tZXRyaWNzPy5kYXlzX3VudGlsX2V4cGlyeSA8IDEwOw0KICAgIGNvbnN0IGlzU3RhdHVzT2sgPSBzdGF0dXNfY29kZSA9PT0gMjAwOw0KICAgIGNvbnN0IGlzRG5zRmFzdCA9IGRuc19sb29rdXBfdGltZSA8IDE7DQoNCiAgICBwZkFkZFZhcmlhYmxlKCJuYW1lIiwgImFsaSIpOw0KDQogICAgY29uc3Qgc3VjY2VzcyA9IGlzU3NsVmFsaWQgJiYgaXNTdGF0dXNPayAmJiBpc0Ruc0Zhc3Q7DQoNCiAgICByZXR1cm4gew0KICAgICAgICBzdWNjZXNzOiBzdWNjZXNzLA0KICAgICAgICBuYW1lOiBuYW1lDQogICAgfTsNCn0=",
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICAgIGNvbnN0IHsgc3RhdHVzX2NvZGUgfSA9IHBhcmFtcz8ubWV0cmljcyB8fCB7fTsKICAgIGNvbnN0IGlzU3RhdHVzT2sgPSBzdGF0dXNfY29kZSA9PT0gMjA3OwoKICAgIGNvbnN0IHN1Y2Nlc3MgPWlzU3RhdHVzT2s7CgogICAgcmV0dXJuIHsKICAgICAgICBzdWNjZXNzOiBzdWNjZXNzCiAgICB9Owp9",
       },
-      {
-        name: "test2",
-        pulse_type: "http",
-        continue_on_step_failure: true,
-        ssl_prove: true,
-        dns_prove: true,
-        mtr_prove: false,
-        tags: ["tag1", "tag2"],
-        url: "{{base_url}}",
-        http_request_options: {
-          method: "{{ method }}",
-          http_version: "HTTP2FallbackToHTTP1",
-          follow_redirects: true,
-          timeout_seconds: 15,
-          headers: [
-            { name: "Content-Type", value: "application/json" },
-            { name: "Accept", value: "application/json" },
-          ],
-          cookies: [{ name: "session_id", value: "12345" }],
-        },
-        query_parameters: {
-          parameters: [
-            { name: "param1", value: "value1" },
-            { name: "param2", value: "value2" },
-          ],
-        },
-        request_body: {
-          body_type: "application/json",
-          body: '{"method":"getmininginfo","params":[],"id":9056,"jsonrpc":"2.0"}',
-        },
-        privacy: {
-          do_not_save_response_body: false,
-        },
-        evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICByZXR1cm4gewogICAgc3VjY2VzczogdHJ1ZSwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogdGhpcy52YXJpYWJsZTEsCiAgfTsKfQo=",
-      },
+      // {
+      //   name: "test2",
+      //   pulse_type: "http",
+      //   continue_on_step_failure: true,
+      //   ssl_prove: true,
+      //   dns_prove: true,
+      //   mtr_prove: false,
+      //   tags: ["tag1", "tag2"],
+      //   url: "{{base_url}}",
+      //   http_request_options: {
+      //     method: "{{ method }}",
+      //     http_version: "HTTP2FallbackToHTTP1",
+      //     follow_redirects: true,
+      //     timeout_seconds: 15,
+      //     headers: [
+      //       { name: "Content-Type", value: "application/json" },
+      //       { name: "Accept", value: "application/json" },
+      //     ],
+      //     cookies: [{ name: "session_id", value: "12345" }],
+      //   },
+      //   query_parameters: {
+      //     parameters: [
+      //       { name: "param1", value: "value1" },
+      //       { name: "param2", value: "value2" },
+      //     ],
+      //   },
+      //   request_body: {
+      //     body_type: "application/json",
+      //     body: '{"method":"getmininginfo","params":[],"id":9056,"jsonrpc":"2.0"}',
+      //   },
+      //   privacy: {
+      //     do_not_save_response_body: false,
+      //   },
+      //   evaluation_function:
+      //     "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICByZXR1cm4gewogICAgc3VjY2VzczogdHJ1ZSwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogdGhpcy52YXJpYWJsZTEsCiAgfTsKfQo=",
+      // },
     ],
     alert_config: {
       failed_total_locations: 1,

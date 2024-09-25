@@ -1,6 +1,7 @@
 const v8 = require("v8");
 const vm = require("vm");
 const fetchMetrics = require("./fetchMetrics");
+const { Buffer } = require("buffer");
 
 function createContext(initialVariables = {}) {
   const sharedContext = {
@@ -9,7 +10,7 @@ function createContext(initialVariables = {}) {
       if (typeof name !== "string") {
         throw new Error("Name must be a string");
       }
-      this[name] = value; // Attach variables directly to sharedContext
+      this[name] = value;
       console.log(`Variable added: ${name} = ${value}`);
       return "OK";
     },
@@ -25,7 +26,6 @@ function createContext(initialVariables = {}) {
         throw new Error(`Variable '${name}' not found`);
       }
     },
-    // Add any other initial variables
     ...initialVariables,
   };
 
@@ -33,7 +33,7 @@ function createContext(initialVariables = {}) {
 }
 
 function runInContext(sharedContext, code) {
-  const sandbox = { ...sharedContext }; // Create a sandbox with sharedContext
+  const sandbox = { ...sharedContext, Buffer: Buffer };
   const context = vm.createContext(sandbox);
   try {
     const script = new vm.Script(code);
@@ -45,14 +45,61 @@ function runInContext(sharedContext, code) {
 }
 
 function runAssertionFunction(context, metrics, assertion) {
-  // Add metrics to the context
   context.metrics = metrics;
 
   const wrappedAssertion = `
     (function() {
-      ${atob(assertion)}
+      ${Buffer.from(assertion, "base64").toString("utf-8")}
       try {
+        var originalConsoleLog = console.log;
+        var logMessages = [];
+        console.log = function() {
+          logMessages.push(Array.from(arguments).join(' '));
+          originalConsoleLog.apply(console, arguments);
+        };
+
         var result = main({ metrics: metrics });
+
+        // Add tracking logic here
+        result.failureReasons = [];
+        result.variableStates = {};
+        var decodedEvaluationCode = Buffer.from('${assertion}', 'base64').toString('utf-8');
+        var functionBody = decodedEvaluationCode.substring(decodedEvaluationCode.indexOf("{") + 1, decodedEvaluationCode.lastIndexOf("}"));
+        var lines = functionBody.split("\\n");
+
+        lines.forEach(line => {
+          line = line.trim();
+          if (line.startsWith('const') || line.startsWith('let') || line.startsWith('var')) {
+            var parts = line.split('=');
+            var variableName = parts[0].split(' ')[1].trim();
+            try {
+              result.variableStates[variableName] = eval(variableName);
+            } catch (e) {
+              result.variableStates[variableName] = "Unable to evaluate";
+            }
+          }
+        });
+
+        if (!result.success) {
+          var successLine = lines.find(line => line.includes('const success ='));
+          if (successLine) {
+            var conditions = successLine.split('=')[1].split('&&');
+            conditions.forEach(condition => {
+              condition = condition.trim();
+              try {
+                if (!eval(condition)) {
+                  result.failureReasons.push(condition + " is false");
+                }
+              } catch (e) {
+                result.failureReasons.push("Error evaluating: " + condition);
+              }
+            });
+          }
+        }
+
+        result.logMessages = logMessages;
+        console.log = originalConsoleLog;
+
         return JSON.stringify(result);
       } catch (e) {
         return JSON.stringify({ error: e.message, stack: e.stack });
@@ -81,7 +128,6 @@ function runAssertionFunction(context, metrics, assertion) {
 }
 
 async function main() {
-  // Fetch metrics
   const response = await fetchMetrics();
 
   if (!response || response.code !== 200) {
@@ -92,7 +138,6 @@ async function main() {
   const testConfigs = response.data.execution_result.pulse.test_config;
   const metrics = response.data.test_metrics;
 
-  // Initialize variables from the response
   const initialVariables = {};
   if (
     response.data.execution_result.pulse &&
@@ -124,7 +169,6 @@ async function main() {
 
   console.log("Final Initial Variables:", initialVariables);
 
-  // Create a single context to be used across all test evaluations
   const sharedContext = createContext(initialVariables);
 
   const results = [];
@@ -162,7 +206,6 @@ async function main() {
 
   console.log("All test results:", results);
   console.log("All tests passed:", allTestsPassed);
-  // console.log("Final variables state:", sharedContext);
 }
 
 main().catch(console.error);
