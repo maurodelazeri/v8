@@ -26,7 +26,7 @@ async function fetchMetrics() {
         continue_on_step_failure: true,
         ssl_prove: true,
         dns_prove: true,
-        mtr_prove: false,
+        mtr_prove: true,
         tags: ["tag1", "tag2"],
         url: "{{base_url}}",
         http_request_options: {
