@@ -204,7 +204,7 @@ async function main() {
     }
   }
 
-  console.log("All test results:", results);
+  console.log("All test results:", JSON.stringify(results, null, 2));
   console.log("All tests passed:", allTestsPassed);
 }
 
