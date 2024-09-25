@@ -288,6 +288,7 @@ async function main() {
       });
     }
 
+    console.log("result", result);
     if (!result.success) {
       allTestsPassed = false;
       if (!testConfig.continue_on_step_failure) {
