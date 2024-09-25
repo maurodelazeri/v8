@@ -303,7 +303,7 @@ async function main() {
   }
 
   // console.log("All test results:", JSON.stringify(results, null, 2));
-  // console.log("All tests passed:", allTestsPassed);
+  console.log("All tests passed:", allTestsPassed);
 
   // If you want to see the accumulated variableStates and failureReasons
   // console.log("Accumulated variableStates:", sharedContext.__variableStates);
