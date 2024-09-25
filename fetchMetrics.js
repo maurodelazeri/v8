@@ -54,44 +54,44 @@ async function fetchMetrics() {
           do_not_save_response_body: false,
         },
         evaluation_function:
-          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICAgIGNvbnN0IG1ldHJpYyA9IHBhcmFtcz8ubWV0cmljcz8uWzBdIHx8IHt9OwogICAgY29uc3QgeyBzc2xfbWV0cmljcywgc3RhdHVzX2NvZGUsIGRuc19sb29rdXBfdGltZSB9ID0gbWV0cmljOwoKICAgIGNvbnN0IGlzU3NsVmFsaWQgPSBzc2xfbWV0cmljcz8uZGF5c191bnRpbF9leHBpcnkgPiAxMDsKICAgIGNvbnN0IGlzU3RhdHVzT2sgPSBOdW1iZXIoc3RhdHVzX2NvZGUpID09PSAyMDA7CiAgICBjb25zdCBpc0Ruc0Zhc3QgPSBkbnNfbG9va3VwX3RpbWUgPCAxOwoKICAgIHBmQWRkVmFyaWFibGUoIm5hbWUiLCAiYWxpIik7CgogICAgY29uc3Qgc3VjY2VzcyA9IGlzU3NsVmFsaWQgJiYgaXNTdGF0dXNPayAmJiBpc0Ruc0Zhc3Q7CgogICAgcmV0dXJuIHsKICAgICAgICBzdWNjZXNzOiBzdWNjZXNzLAogICAgICAgIG5hbWU6IG5hbWUKICAgIH07Cn0K",
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICAgIGNvbnN0IG1ldHJpYyA9IHBhcmFtcz8ubWV0cmljcz8uWzBdIHx8IHt9OwogICAgY29uc3QgeyBzc2xfbWV0cmljcywgc3RhdHVzX2NvZGUsIGRuc19sb29rdXBfdGltZSB9ID0gbWV0cmljOwoKICAgIGNvbnN0IGlzU3NsVmFsaWQgPSBzc2xfbWV0cmljcz8uZGF5c191bnRpbF9leHBpcnkgPiAxMDsKICAgIGNvbnN0IGlzU3RhdHVzT2sgPSBOdW1iZXIoc3RhdHVzX2NvZGUpID09PSAyMDE7CiAgICBjb25zdCBpc0Ruc0Zhc3QgPSBkbnNfbG9va3VwX3RpbWUgPCAxOwoKICAgIHBmQWRkVmFyaWFibGUoIm5hbWUiLCAiYWxpIik7CgogICAgY29uc3Qgc3VjY2VzcyA9IGlzU3NsVmFsaWQgJiYgaXNTdGF0dXNPayAmJiBpc0Ruc0Zhc3Q7CgogICAgcmV0dXJuIHsKICAgICAgICBzdWNjZXNzOiBzdWNjZXNzLAogICAgICAgIG5hbWU6IG5hbWUKICAgIH07Cn0K",
       },
-      // {
-      //   name: "test2",
-      //   pulse_type: "http",
-      //   continue_on_step_failure: true,
-      //   ssl_prove: true,
-      //   dns_prove: true,
-      //   mtr_prove: false,
-      //   tags: ["tag1", "tag2"],
-      //   url: "{{base_url}}",
-      //   http_request_options: {
-      //     method: "{{ method }}",
-      //     http_version: "HTTP2FallbackToHTTP1",
-      //     follow_redirects: true,
-      //     timeout_seconds: 15,
-      //     headers: [
-      //       { name: "Content-Type", value: "application/json" },
-      //       { name: "Accept", value: "application/json" },
-      //     ],
-      //     cookies: [{ name: "session_id", value: "12345" }],
-      //   },
-      //   query_parameters: {
-      //     parameters: [
-      //       { name: "param1", value: "value1" },
-      //       { name: "param2", value: "value2" },
-      //     ],
-      //   },
-      //   request_body: {
-      //     body_type: "application/json",
-      //     body: '{"method":"getmininginfo","params":[],"id":9056,"jsonrpc":"2.0"}',
-      //   },
-      //   privacy: {
-      //     do_not_save_response_body: false,
-      //   },
-      //   evaluation_function:
-      //     "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICByZXR1cm4gewogICAgc3VjY2VzczogdHJ1ZSwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogdGhpcy52YXJpYWJsZTEsCiAgfTsKfQo=",
-      // },
+      {
+        name: "test2",
+        pulse_type: "http",
+        continue_on_step_failure: true,
+        ssl_prove: true,
+        dns_prove: true,
+        mtr_prove: false,
+        tags: ["tag1", "tag2"],
+        url: "{{base_url}}",
+        http_request_options: {
+          method: "{{ method }}",
+          http_version: "HTTP2FallbackToHTTP1",
+          follow_redirects: true,
+          timeout_seconds: 15,
+          headers: [
+            { name: "Content-Type", value: "application/json" },
+            { name: "Accept", value: "application/json" },
+          ],
+          cookies: [{ name: "session_id", value: "12345" }],
+        },
+        query_parameters: {
+          parameters: [
+            { name: "param1", value: "value1" },
+            { name: "param2", value: "value2" },
+          ],
+        },
+        request_body: {
+          body_type: "application/json",
+          body: '{"method":"getmininginfo","params":[],"id":9056,"jsonrpc":"2.0"}',
+        },
+        privacy: {
+          do_not_save_response_body: false,
+        },
+        evaluation_function:
+          "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICByZXR1cm4gewogICAgc3VjY2VzczogdHJ1ZSwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogdGhpcy52YXJpYWJsZTEsCiAgfTsKfQo=",
+      },
     ],
     alert_config: {
       failed_total_locations: 1,

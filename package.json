@@ -1,7 +1,23 @@
 {
+  "name": "metrics-assertion-script",
+  "version": "1.0.0",
+  "description": "Script to run metric assertions",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "build": "pkg . --targets node14-macos-arm64"
+  },
+  "keywords": [
+    "metrics",
+    "assertions",
+    "testing"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "acorn": "^8.12.1",
-    "acorn-walk": "^8.3.4",
     "axios": "^1.7.7"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
   }
 }
