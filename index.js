@@ -105,11 +105,6 @@ function injectVariableTracking(code) {
     },
   });
 
-  // Remove initialization of __variableStates and __failureReasons
-  // They are now initialized in the shared context
-  // modifiedLines.push("var __variableStates = {};");
-  // modifiedLines.push("var __failureReasons = [];");
-
   // Inject variable tracking code after relevant lines
   for (let i = 0; i < lines.length; i++) {
     modifiedLines.push(lines[i]);
