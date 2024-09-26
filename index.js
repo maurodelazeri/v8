@@ -96,41 +96,44 @@ function injectVariableTracking(code) {
         linesToInject[lineNumber].push(varName);
       }
     },
+    IfStatement(node) {
+      const conditionCode = code.substring(node.test.start, node.test.end);
+      const lineNumber = node.loc.start.line - lineOffset;
+      if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
+      linesToInject[lineNumber].push(
+        `__evaluateCondition(${JSON.stringify(conditionCode)});`
+      );
+    },
   });
 
   for (let i = 0; i < lines.length; i++) {
     modifiedLines.push(lines[i]);
 
     if (linesToInject[i]) {
-      linesToInject[i].forEach((varName) => {
-        modifiedLines.push(`__variableStates['${varName}'] = ${varName};`);
-      });
-    }
-
-    if (lines[i].trim().startsWith("const success =")) {
-      const successAssignment = lines[i].trim();
-      const conditionsString = successAssignment
-        .substring(successAssignment.indexOf("=") + 1)
-        .trim()
-        .replace(/;$/, "");
-
-      const conditions = conditionsString.split(/&&|\|\|/).map((s) => s.trim());
-
-      conditions.forEach((condition) => {
-        modifiedLines.push(`
-          try {
-            if (!(${condition})) {
-              __failureReasons.push('${condition} is false');
-            }
-          } catch (e) {
-            __failureReasons.push('Error evaluating: ${condition}');
-          }
-        `);
+      linesToInject[i].forEach((item) => {
+        if (item.startsWith("__evaluateCondition")) {
+          modifiedLines.push(item);
+        } else {
+          modifiedLines.push(`__variableStates['${item}'] = ${item};`);
+        }
       });
     }
   }
 
   let modifiedCode = modifiedLines.join("\n");
+
+  modifiedCode = `
+    function __evaluateCondition(condition) {
+      try {
+        if (!eval(condition)) {
+          __failureReasons.push(condition + ' is false');
+        }
+      } catch (e) {
+        __failureReasons.push('Error evaluating: ' + condition);
+      }
+    }
+    ${modifiedCode}
+  `;
 
   modifiedCode = modifiedCode.replace(
     /return\s+({[\s\S]*?});?/,
