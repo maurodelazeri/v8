@@ -10,7 +10,8 @@
       "success": false,
       "failureReasons": [
         "isSslValid is false",
-        "isStatusOk is false"
+        "isStatusOk is false",
+        "isDnsFast is false"
       ],
       "variableStates": {
         "__ifStatements": [],
@@ -23,9 +24,7 @@
           "pulse_id": "5d7b70c8-7b86-11ef-8eb0-56c37528c92d",
           "run_id": "f621593f-40e2-46c6-82d4-05895eb5ff84",
           "request_timestamp": 1727300249607,
-          "resolved_ip_addresses": [
-            "141.148.20.193"
-          ],
+          "resolved_ip_addresses": ["141.148.20.193"],
           "dns_lookup_time": 0.000696916,
           "tcp_connection_time": 0.255490916,
           "tls_handshake_time": 1.973184833,
@@ -33,32 +32,16 @@
           "total_duration": 2.417554333,
           "content_download_time": 0.001,
           "request_headers": {
-            "Accept": [
-              "application/json"
-            ],
-            "Content-Type": [
-              "application/json"
-            ],
-            "Cookie": [
-              "session_id=12345"
-            ]
+            "Accept": ["application/json"],
+            "Content-Type": ["application/json"],
+            "Cookie": ["session_id=12345"]
           },
           "response_headers": {
-            "Connection": [
-              "keep-alive"
-            ],
-            "Content-Length": [
-              "17"
-            ],
-            "Content-Type": [
-              "application/json"
-            ],
-            "Date": [
-              "Wed, 25 Sep 2024 21:37:31 GMT"
-            ],
-            "Strict-Transport-Security": [
-              "max-age=31536000; includeSubDomains"
-            ]
+            "Connection": ["keep-alive"],
+            "Content-Length": ["17"],
+            "Content-Type": ["application/json"],
+            "Date": ["Wed, 25 Sep 2024 21:37:31 GMT"],
+            "Strict-Transport-Security": ["max-age=31536000; includeSubDomains"]
           },
           "status_code": 200,
           "error": "",
@@ -146,7 +129,7 @@
     {
       "testName": "test2",
       "success": false,
-      "failureReasons": [],
+      "failureReasons": ["Condition failed: \"mauro > 11\" at line 5"],
       "variableStates": {
         "__ifStatements": [
           {
@@ -162,7 +145,9 @@
   "allTestsPassed": false,
   "accumulatedFailureReasons": [
     "isSslValid is false",
-    "isStatusOk is false"
+    "isStatusOk is false",
+    "isDnsFast is false",
+    "Condition failed: \"mauro > 11\" at line 5"
   ],
   "error": null
 }

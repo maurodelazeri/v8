@@ -64,38 +64,6 @@ function injectVariableTracking(code) {
         variableNames.add(varName);
         const lineNumber = node.loc.start.line - lineOffset;
 
-        // Check if the variable declared is 'success'
-        if (varName === "success") {
-          // Handle the conditions in the initializer of 'success'
-          const conditions = [];
-          function extractConditions(expr) {
-            if (expr.type === "LogicalExpression") {
-              extractConditions(expr.left);
-              extractConditions(expr.right);
-            } else {
-              conditions.push(expr);
-            }
-          }
-          if (node.init) {
-            extractConditions(node.init);
-
-            // Inject code to evaluate each condition
-            conditions.forEach((conditionNode) => {
-              const conditionCode = escodegen.generate(conditionNode);
-              if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
-              linesToInject[lineNumber].push(`
-                try {
-                  if (!(${conditionCode})) {
-                    __failureReasons.push('${conditionCode} is false');
-                  }
-                } catch (e) {
-                  __failureReasons.push('Error evaluating: ${conditionCode}');
-                }
-              `);
-            });
-          }
-        }
-
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(
           `__variableStates['${varName}'] = ${varName};`
@@ -107,37 +75,6 @@ function injectVariableTracking(code) {
         const varName = node.left.name;
         variableNames.add(varName);
         const lineNumber = node.loc.start.line - lineOffset;
-
-        // Check if the assignment is to 'success'
-        if (varName === "success") {
-          // Handle the conditions in the assignment to 'success'
-          // Recursively extract conditions
-          const conditions = [];
-          function extractConditions(expr) {
-            if (expr.type === "LogicalExpression") {
-              extractConditions(expr.left);
-              extractConditions(expr.right);
-            } else {
-              conditions.push(expr);
-            }
-          }
-          extractConditions(node.right);
-
-          // Inject code to evaluate each condition
-          conditions.forEach((conditionNode) => {
-            const conditionCode = escodegen.generate(conditionNode);
-            if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
-            linesToInject[lineNumber].push(`
-              try {
-                if (!(${conditionCode})) {
-                  __failureReasons.push('${conditionCode} is false');
-                }
-              } catch (e) {
-                __failureReasons.push('Error evaluating: ${conditionCode}');
-              }
-            `);
-          });
-        }
 
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(
@@ -177,15 +114,7 @@ function injectVariableTracking(code) {
 
     if (linesToInject[i]) {
       linesToInject[i].forEach((item) => {
-        if (
-          item.startsWith("__evaluateCondition") ||
-          item.includes("try") ||
-          item.includes("__failureReasons.push")
-        ) {
-          modifiedLines.push(item);
-        } else {
-          modifiedLines.push(item);
-        }
+        modifiedLines.push(item);
       });
     }
   }
@@ -197,12 +126,12 @@ function injectVariableTracking(code) {
     function __evaluateCondition(condition, line) {
       try {
         const result = eval(condition);
-        __variableStates['__ifStatements'][line] = { condition, result };
+        __variableStates['__ifStatements'].push({ condition, line, result });
         if (!result) {
-          __failureReasons.push(\`Condition at line \${line}: "\${condition}" is false\`);
+          __failureReasons.push(\`Condition failed: "\${condition}" at line \${line}\`);
         }
       } catch (e) {
-        __failureReasons.push(\`Error evaluating condition at line \${line}: "\${condition}"\`);
+        __failureReasons.push(\`Error evaluating condition: "\${condition}" at line \${line}\`);
       }
     }
     ${modifiedCode}
@@ -262,9 +191,55 @@ function runAssertionFunction(context, metrics, assertion) {
       return { success: false, error: "Invalid assertion result format" };
     }
 
+    // Handle failureReasons
+    result.failureReasons = result.failureReasons || [];
+
+    // If there are failure reasons in the evaluation_function_return, use those
+    if (
+      result.variableStates &&
+      result.variableStates.metric &&
+      result.variableStates.metric.evaluation_function_return &&
+      result.variableStates.metric.evaluation_function_return.failureReasons
+    ) {
+      result.failureReasons =
+        result.variableStates.metric.evaluation_function_return.failureReasons;
+    }
+
+    // If there are still no failure reasons, check for failed conditions
+    if (
+      result.failureReasons.length === 0 &&
+      result.variableStates &&
+      result.variableStates.__ifStatements
+    ) {
+      result.variableStates.__ifStatements.forEach((statement) => {
+        if (!statement.result) {
+          result.failureReasons.push(
+            `Condition failed: "${statement.condition}" at line ${statement.line}`
+          );
+        }
+      });
+    }
+
+    // If the test failed but still no failure reasons were provided, add a generic failure reason
+    if (!result.success && result.failureReasons.length === 0) {
+      result.failureReasons.push(
+        "Test failed without specific failure reasons"
+      );
+    }
+
+    // Remove duplicate failure reasons
+    result.failureReasons = [...new Set(result.failureReasons)];
+
     return result;
   } catch (error) {
-    return { success: false, error: error.message, stack: error.stack };
+    return {
+      success: false,
+      error: error.message,
+      stack: error.stack,
+      failureReasons: [
+        "An error occurred while running the assertion function",
+      ],
+    };
   }
 }
 
