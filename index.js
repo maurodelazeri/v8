@@ -2,8 +2,8 @@ const v8 = require("v8");
 const vm = require("vm");
 const acorn = require("acorn");
 const walk = require("acorn-walk");
-const fetchMetrics = require("./fetchMetrics");
 const { Buffer } = require("buffer");
+const { metrics, testConfigs, requestVariables } = require("./fetchMetrics");
 
 function createContext(initialVariables = {}) {
   const sharedContext = {
@@ -210,22 +210,9 @@ function runAssertionFunction(context, metrics, assertion) {
 }
 
 async function main() {
-  const response = await fetchMetrics();
-
-  if (!response || response.code !== 200) {
-    console.error("Failed to fetch metrics or received non-200 response");
-    return;
-  }
-
-  const testConfigs = response.data.execution_result.pulse.test_config;
-  const metrics = response.data.test_metrics;
-
   const initialVariables = {};
-  if (
-    response.data.execution_result.pulse &&
-    Array.isArray(response.data.execution_result.pulse.variables)
-  ) {
-    response.data.execution_result.pulse.variables.forEach((variable) => {
+  if (Array.isArray(requestVariables)) {
+    requestVariables.forEach((variable) => {
       if (
         variable &&
         typeof variable === "object" &&
