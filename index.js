@@ -2,9 +2,8 @@ const v8 = require("v8");
 const vm = require("vm");
 const acorn = require("acorn");
 const walk = require("acorn-walk");
-const { Buffer } = require("buffer");
 const escodegen = require("escodegen");
-
+const { Buffer } = require("buffer");
 const { metrics, testConfigs, requestVariables } = require("./fetchMetrics");
 
 function createContext(initialVariables = {}) {
@@ -48,7 +47,6 @@ function runInContext(context, code) {
 }
 
 function injectVariableTracking(code) {
-  // Wrap the code for parsing but adjust line numbers accordingly
   const wrappedCode = `function __tempFunction__() {\n${code}\n}`;
   const ast = acorn.parse(wrappedCode, { ecmaVersion: 2020, locations: true });
   const variableNames = new Set();
@@ -57,39 +55,97 @@ function injectVariableTracking(code) {
   const linesToInject = {};
   const ifStatements = [];
 
-  const lineOffset = 1; // Adjust line numbers due to wrapping
+  const lineOffset = 1;
 
   walk.simple(ast, {
     VariableDeclarator(node) {
-      // Existing code to track variable declarations
-      if (node.id.type === "ObjectPattern") {
-        node.id.properties.forEach((prop) => {
-          const varName = prop.key.name;
-          variableNames.add(varName);
-          const lineNumber = node.loc.start.line - lineOffset;
-          if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
-          linesToInject[lineNumber].push(varName);
-        });
-      } else if (node.id.type === "Identifier") {
+      if (node.id.type === "Identifier") {
         const varName = node.id.name;
         variableNames.add(varName);
         const lineNumber = node.loc.start.line - lineOffset;
+
+        // Check if the variable declared is 'success'
+        if (varName === "success") {
+          // Handle the conditions in the initializer of 'success'
+          const conditions = [];
+          function extractConditions(expr) {
+            if (expr.type === "LogicalExpression") {
+              extractConditions(expr.left);
+              extractConditions(expr.right);
+            } else {
+              conditions.push(expr);
+            }
+          }
+          if (node.init) {
+            extractConditions(node.init);
+
+            // Inject code to evaluate each condition
+            conditions.forEach((conditionNode) => {
+              const conditionCode = escodegen.generate(conditionNode);
+              if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
+              linesToInject[lineNumber].push(`
+                try {
+                  if (!(${conditionCode})) {
+                    __failureReasons.push('${conditionCode} is false');
+                  }
+                } catch (e) {
+                  __failureReasons.push('Error evaluating: ${conditionCode}');
+                }
+              `);
+            });
+          }
+        }
+
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
-        linesToInject[lineNumber].push(varName);
+        linesToInject[lineNumber].push(
+          `__variableStates['${varName}'] = ${varName};`
+        );
       }
     },
     AssignmentExpression(node) {
-      // Existing code to track variable assignments
       if (node.left.type === "Identifier") {
         const varName = node.left.name;
         variableNames.add(varName);
         const lineNumber = node.loc.start.line - lineOffset;
+
+        // Check if the assignment is to 'success'
+        if (varName === "success") {
+          // Handle the conditions in the assignment to 'success'
+          // Recursively extract conditions
+          const conditions = [];
+          function extractConditions(expr) {
+            if (expr.type === "LogicalExpression") {
+              extractConditions(expr.left);
+              extractConditions(expr.right);
+            } else {
+              conditions.push(expr);
+            }
+          }
+          extractConditions(node.right);
+
+          // Inject code to evaluate each condition
+          conditions.forEach((conditionNode) => {
+            const conditionCode = escodegen.generate(conditionNode);
+            if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
+            linesToInject[lineNumber].push(`
+              try {
+                if (!(${conditionCode})) {
+                  __failureReasons.push('${conditionCode} is false');
+                }
+              } catch (e) {
+                __failureReasons.push('Error evaluating: ${conditionCode}');
+              }
+            `);
+          });
+        }
+
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
-        linesToInject[lineNumber].push(varName);
+        linesToInject[lineNumber].push(
+          `__variableStates['${varName}'] = ${varName};`
+        );
       }
     },
     CallExpression(node) {
-      // Existing code to track pfAddVariable calls
       if (
         node.callee &&
         node.callee.name === "pfAddVariable" &&
@@ -100,11 +156,12 @@ function injectVariableTracking(code) {
         variableNames.add(varName);
         const lineNumber = node.loc.start.line - lineOffset;
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
-        linesToInject[lineNumber].push(varName);
+        linesToInject[lineNumber].push(
+          `__variableStates['${varName}'] = ${varName};`
+        );
       }
     },
     IfStatement(node) {
-      // Use escodegen to generate the condition code from the AST node
       const conditionCode = escodegen.generate(node.test);
       const lineNumber = node.loc.start.line - lineOffset;
       ifStatements.push({ condition: conditionCode, line: lineNumber });
@@ -120,10 +177,14 @@ function injectVariableTracking(code) {
 
     if (linesToInject[i]) {
       linesToInject[i].forEach((item) => {
-        if (item.startsWith("__evaluateCondition")) {
+        if (
+          item.startsWith("__evaluateCondition") ||
+          item.includes("try") ||
+          item.includes("__failureReasons.push")
+        ) {
           modifiedLines.push(item);
         } else {
-          modifiedLines.push(`__variableStates['${item}'] = ${item};`);
+          modifiedLines.push(item);
         }
       });
     }
