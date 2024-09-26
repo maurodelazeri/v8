@@ -13,7 +13,6 @@ function createContext(initialVariables = {}) {
         throw new Error("Name must be a string");
       }
       this[name] = value;
-      console.log(`Variable added: ${name} = ${value}`);
       return "OK";
     },
     pfDeleteVariable: function (name) {
@@ -22,7 +21,6 @@ function createContext(initialVariables = {}) {
       }
       if (name in this) {
         delete this[name];
-        console.log(`Variable deleted: ${name}`);
         return "OK";
       } else {
         throw new Error(`Variable '${name}' not found`);
@@ -43,13 +41,11 @@ function runInContext(context, code) {
     const script = new vm.Script(code);
     return script.runInContext(context);
   } catch (error) {
-    console.error("Error running script:", error);
     throw error;
   }
 }
 
 function injectVariableTracking(code) {
-  // Wrap the code in a function to allow 'return' statements
   const wrappedCode = `function __tempFunction__() {\n${code}\n}`;
   const ast = acorn.parse(wrappedCode, { ecmaVersion: 2020, locations: true });
   const variableNames = new Set();
@@ -57,25 +53,22 @@ function injectVariableTracking(code) {
   const modifiedLines = [];
   const linesToInject = {};
 
-  // Adjust line numbers because of the wrapping function
-  const lineOffset = 1; // Since we added one line at the top
+  const lineOffset = 1;
 
-  // Collect variable names and their assignment lines
   walk.simple(ast, {
     VariableDeclarator(node) {
       if (node.id.type === "ObjectPattern") {
-        // Handle object destructuring
         node.id.properties.forEach((prop) => {
           const varName = prop.key.name;
           variableNames.add(varName);
-          const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
+          const lineNumber = node.loc.start.line - lineOffset;
           if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
           linesToInject[lineNumber].push(varName);
         });
       } else if (node.id.type === "Identifier") {
         const varName = node.id.name;
         variableNames.add(varName);
-        const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
+        const lineNumber = node.loc.start.line - lineOffset;
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(varName);
       }
@@ -84,7 +77,7 @@ function injectVariableTracking(code) {
       if (node.left.type === "Identifier") {
         const varName = node.left.name;
         variableNames.add(varName);
-        const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
+        const lineNumber = node.loc.start.line - lineOffset;
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(varName);
       }
@@ -98,14 +91,13 @@ function injectVariableTracking(code) {
       ) {
         const varName = node.arguments[0].value;
         variableNames.add(varName);
-        const lineNumber = node.loc.start.line - lineOffset; // Adjust line number
+        const lineNumber = node.loc.start.line - lineOffset;
         if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
         linesToInject[lineNumber].push(varName);
       }
     },
   });
 
-  // Inject variable tracking code after relevant lines
   for (let i = 0; i < lines.length; i++) {
     modifiedLines.push(lines[i]);
 
@@ -115,7 +107,6 @@ function injectVariableTracking(code) {
       });
     }
 
-    // Special handling for 'const success = ...'
     if (lines[i].trim().startsWith("const success =")) {
       const successAssignment = lines[i].trim();
       const conditionsString = successAssignment
@@ -123,7 +114,6 @@ function injectVariableTracking(code) {
         .trim()
         .replace(/;$/, "");
 
-      // Split conditions by '&&' and '||'
       const conditions = conditionsString.split(/&&|\|\|/).map((s) => s.trim());
 
       conditions.forEach((condition) => {
@@ -140,10 +130,8 @@ function injectVariableTracking(code) {
     }
   }
 
-  // Modify the return statement to include variableStates and failureReasons
   let modifiedCode = modifiedLines.join("\n");
 
-  // Replace the original return statement
   modifiedCode = modifiedCode.replace(
     /return\s+({[\s\S]*?});?/,
     "return { variableStates: __variableStates, failureReasons: __failureReasons, ...$1 };"
@@ -153,7 +141,6 @@ function injectVariableTracking(code) {
 }
 
 function runAssertionFunction(context, metrics, assertion) {
-  // Ensure metrics are accessible correctly
   context.metrics = metrics;
   context.params = { metrics: metrics };
 
@@ -161,7 +148,6 @@ function runAssertionFunction(context, metrics, assertion) {
     "utf-8"
   );
 
-  // Extract function body
   var functionBodyStart = decodedEvaluationCode.indexOf("{") + 1;
   var functionBodyEnd = decodedEvaluationCode.lastIndexOf("}");
   var functionBody = decodedEvaluationCode.substring(
@@ -169,10 +155,8 @@ function runAssertionFunction(context, metrics, assertion) {
     functionBodyEnd
   );
 
-  // Inject variable tracking code
   var modifiedFunctionBody = injectVariableTracking(functionBody);
 
-  // Wrap the function code
   var wrappedCode = `
     (function() {
       try {
@@ -192,109 +176,104 @@ function runAssertionFunction(context, metrics, assertion) {
     var result = JSON.parse(resultString);
 
     if (result.error) {
-      console.error("Assertion error:", result.error);
-      console.error("Stack trace:", result.stack);
-      return { success: false, error: result.error };
+      return { success: false, error: result.error, stack: result.stack };
     }
     if (typeof result.success !== "boolean") {
-      console.error("Assertion result must contain a 'success' boolean field");
       return { success: false, error: "Invalid assertion result format" };
     }
 
-    // Now, result.variableStates contains the variable values
     return result;
   } catch (error) {
-    console.error("Error running assertion:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, stack: error.stack };
   }
 }
 
 async function main() {
-  const initialVariables = {};
-  if (Array.isArray(requestVariables)) {
-    requestVariables.forEach((variable) => {
-      if (
-        variable &&
-        typeof variable === "object" &&
-        "name" in variable &&
-        "value" in variable
-      ) {
-        initialVariables[variable.name] = variable.value;
-      } else {
-        const key = Object.keys(variable)[0];
-        const value = variable[key];
-        if (key && value !== undefined) {
-          initialVariables[key] = value;
+  const output = {
+    initialVariables: {},
+    testResults: [],
+    allTestsPassed: true,
+    accumulatedFailureReasons: [],
+    error: null,
+  };
+
+  try {
+    if (Array.isArray(requestVariables)) {
+      requestVariables.forEach((variable) => {
+        if (
+          variable &&
+          typeof variable === "object" &&
+          "name" in variable &&
+          "value" in variable
+        ) {
+          output.initialVariables[variable.name] = variable.value;
         } else {
-          console.error(`Invalid variable format: ${JSON.stringify(variable)}`);
+          const key = Object.keys(variable)[0];
+          const value = variable[key];
+          if (key && value !== undefined) {
+            output.initialVariables[key] = value;
+          } else {
+            throw new Error(
+              `Invalid variable format: ${JSON.stringify(variable)}`
+            );
+          }
+        }
+      });
+    } else {
+      throw new Error(
+        "No variables found or variables format is incorrect in the response payload."
+      );
+    }
+
+    const sharedContext = createContext(output.initialVariables);
+
+    for (let i = 0; i < testConfigs.length; i++) {
+      const testConfig = testConfigs[i];
+      const assertion = testConfig.evaluation_function;
+      const result = runAssertionFunction(sharedContext, metrics, assertion);
+
+      const testResult = {
+        testName: testConfig.name,
+        success: result.success,
+        failureReasons: result.failureReasons || [],
+        variableStates: result.variableStates || {},
+        error: result.error,
+        stack: result.stack,
+      };
+
+      output.testResults.push(testResult);
+
+      if (!result.success) {
+        output.allTestsPassed = false;
+        output.accumulatedFailureReasons.push(...(result.failureReasons || []));
+        if (!testConfig.continue_on_step_failure) {
+          break;
         }
       }
-    });
-  } else {
-    console.error(
-      "No variables found or variables format is incorrect in the response payload."
-    );
+    }
+
+    output.accumulatedFailureReasons = [
+      ...new Set(output.accumulatedFailureReasons),
+    ];
+  } catch (error) {
+    output.error = error.message;
+    output.stack = error.stack;
+    output.allTestsPassed = false;
   }
 
-  console.log("Final Initial Variables:", initialVariables);
-
-  const sharedContext = createContext(initialVariables);
-
-  const results = [];
-  let allTestsPassed = true;
-
-  for (let i = 0; i < testConfigs.length; i++) {
-    const testConfig = testConfigs[i];
-
-    console.log(`Running test: ${testConfig.name}`);
-
-    const assertion = testConfig.evaluation_function;
-    const result = runAssertionFunction(sharedContext, metrics, assertion);
-
-    results.push({
-      testName: testConfig.name,
-      result: result,
-    });
-
-    console.log(`Test result for ${testConfig.name}:`);
-    console.log(`  Success: ${result.success}`);
-    if (result.failureReasons && result.failureReasons.length > 0) {
-      console.log(`  Failure Reasons:`);
-      result.failureReasons.forEach((reason) => {
-        console.log(`    - ${reason}`);
-      });
-    }
-    if (result.variableStates) {
-      console.log(`  Variable States:`);
-      Object.keys(result.variableStates).forEach((varName) => {
-        console.log(`    ${varName}:`);
-        console.log(
-          `      After: ${JSON.stringify(result.variableStates[varName])}`
-        );
-      });
-    }
-
-    if (!result.success) {
-      allTestsPassed = false;
-      if (!testConfig.continue_on_step_failure) {
-        console.log(
-          "Test failed and continue_on_step_failure is false. Stopping execution."
-        );
-        break;
-      } else {
-        console.log(
-          "Test failed but continue_on_step_failure is true. Continuing to next test."
-        );
-      }
-    }
-  }
-
-  // console.log("All test results:", JSON.stringify(results, null, 2));
-  console.log("All tests passed:", allTestsPassed);
-
-  // If you want to see the accumulated variableStates and failureReasons
-  // console.log("Accumulated variableStates:", sharedContext.__variableStates);
-  console.log("Accumulated failureReasons:", sharedContext.__failureReasons);
+  console.log(JSON.stringify(output, null, 2));
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(
+    JSON.stringify(
+      {
+        error: error.message,
+        stack: error.stack,
+        allTestsPassed: false,
+      },
+      null,
+      2
+    )
+  );
+});
