@@ -935,7 +935,7 @@ const testConfigs = [
       do_not_save_response_body: false,
     },
     evaluation_function:
-      "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKICByZXR1cm4gewogICAgc3VjY2VzczogdHJ1ZSwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogdGhpcy52YXJpYWJsZTEsCiAgfTsKfQo=",
+      "ZnVuY3Rpb24gbWFpbihwYXJhbXMpIHsKIHZhciBtYXVybyA9IDEwCgpsZXQgcmVzdWx0ID0gZmFsc2UKaWYgKG1hdXJvID4gMTEpIHsKICAgcmVzdWx0ID0gdHJ1ZQp9CiAgcmV0dXJuIHsKICAgIHN1Y2Nlc3M6IHJlc3VsdCwKICAgIHNhYmVuZG9zOiB0aGlzLm1hdXJvLAogICAgZnJvbV90ZXN0MTogdGhpcy52YXJpYWJsZTEsCiAgfTsKfQo=",
   },
 ];
 

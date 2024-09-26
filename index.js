@@ -141,6 +141,10 @@ function injectVariableTracking(code) {
 }
 
 function runAssertionFunction(context, metrics, assertion) {
+  // Reset __variableStates and __failureReasons before each test
+  context.__variableStates = {};
+  context.__failureReasons = [];
+
   context.metrics = metrics;
   context.params = { metrics: metrics };
 
