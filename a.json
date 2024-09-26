@@ -10,6 +10,7 @@
       "success": false,
       "failureReasons": [],
       "variableStates": {
+        "__ifStatements": [],
         "metric": {
           "metric_type": "http",
           "name": "test1",
@@ -147,6 +148,12 @@
       "success": false,
       "failureReasons": [],
       "variableStates": {
+        "__ifStatements": [
+          {
+            "condition": "mauro > 11",
+            "line": 5
+          }
+        ],
         "mauro": 10,
         "result": false
       }

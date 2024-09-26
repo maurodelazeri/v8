@@ -15,7 +15,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.7.7"
+    "acorn": "^8.12.1",
+    "acorn-walk": "^8.3.4",
+    "axios": "^1.7.7",
+    "escodegen": "^2.1.0"
   },
   "devDependencies": {
     "pkg": "^5.8.1"

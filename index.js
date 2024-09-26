@@ -3,6 +3,8 @@ const vm = require("vm");
 const acorn = require("acorn");
 const walk = require("acorn-walk");
 const { Buffer } = require("buffer");
+const escodegen = require("escodegen");
+
 const { metrics, testConfigs, requestVariables } = require("./fetchMetrics");
 
 function createContext(initialVariables = {}) {
@@ -46,17 +48,20 @@ function runInContext(context, code) {
 }
 
 function injectVariableTracking(code) {
+  // Wrap the code for parsing but adjust line numbers accordingly
   const wrappedCode = `function __tempFunction__() {\n${code}\n}`;
   const ast = acorn.parse(wrappedCode, { ecmaVersion: 2020, locations: true });
   const variableNames = new Set();
   const lines = code.split("\n");
   const modifiedLines = [];
   const linesToInject = {};
+  const ifStatements = [];
 
-  const lineOffset = 1;
+  const lineOffset = 1; // Adjust line numbers due to wrapping
 
   walk.simple(ast, {
     VariableDeclarator(node) {
+      // Existing code to track variable declarations
       if (node.id.type === "ObjectPattern") {
         node.id.properties.forEach((prop) => {
           const varName = prop.key.name;
@@ -74,6 +79,7 @@ function injectVariableTracking(code) {
       }
     },
     AssignmentExpression(node) {
+      // Existing code to track variable assignments
       if (node.left.type === "Identifier") {
         const varName = node.left.name;
         variableNames.add(varName);
@@ -83,6 +89,7 @@ function injectVariableTracking(code) {
       }
     },
     CallExpression(node) {
+      // Existing code to track pfAddVariable calls
       if (
         node.callee &&
         node.callee.name === "pfAddVariable" &&
@@ -97,11 +104,13 @@ function injectVariableTracking(code) {
       }
     },
     IfStatement(node) {
-      const conditionCode = code.substring(node.test.start, node.test.end);
+      // Use escodegen to generate the condition code from the AST node
+      const conditionCode = escodegen.generate(node.test);
       const lineNumber = node.loc.start.line - lineOffset;
+      ifStatements.push({ condition: conditionCode, line: lineNumber });
       if (!linesToInject[lineNumber]) linesToInject[lineNumber] = [];
       linesToInject[lineNumber].push(
-        `__evaluateCondition(${JSON.stringify(conditionCode)});`
+        `__evaluateCondition(${JSON.stringify(conditionCode)}, ${lineNumber});`
       );
     },
   });
@@ -123,13 +132,16 @@ function injectVariableTracking(code) {
   let modifiedCode = modifiedLines.join("\n");
 
   modifiedCode = `
-    function __evaluateCondition(condition) {
+    __variableStates['__ifStatements'] = ${JSON.stringify(ifStatements)};
+    function __evaluateCondition(condition, line) {
       try {
-        if (!eval(condition)) {
-          __failureReasons.push(condition + ' is false');
+        const result = eval(condition);
+        __variableStates['__ifStatements'][line] = { condition, result };
+        if (!result) {
+          __failureReasons.push(\`Condition at line \${line}: "\${condition}" is false\`);
         }
       } catch (e) {
-        __failureReasons.push('Error evaluating: ' + condition);
+        __failureReasons.push(\`Error evaluating condition at line \${line}: "\${condition}"\`);
       }
     }
     ${modifiedCode}
